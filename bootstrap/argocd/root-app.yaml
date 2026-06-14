@@ -1,0 +1,31 @@
+# The "app of apps" root Application.
+#
+# This is the single seed you apply by hand. After this, Argo CD watches the
+# platform/ directory in this Git repo and manages everything it finds there.
+# To add a platform component later (ingress, cert-manager, monitoring, ...),
+# you commit an Argo CD Application manifest under platform/ and Argo CD syncs
+# it automatically. Nothing else is ever applied by hand again.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nitin020997/idp-platform.git
+    targetRevision: main
+    path: platform
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true      # delete resources removed from Git
+      selfHeal: true   # revert manual drift back to Git state
+    syncOptions:
+      - CreateNamespace=true

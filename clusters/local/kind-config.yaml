@@ -1,0 +1,25 @@
+# Local kind cluster for the IDP platform.
+# One control-plane (labelled ingress-ready so ingress-nginx schedules here)
+# and one worker so you can actually see pods spread across nodes.
+#
+# extraPortMappings expose the cluster's 80/443 on your laptop's localhost,
+# so once ingress-nginx is installed you can hit https://<app>.localhost.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: idp
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+      - containerPort: 443
+        hostPort: 443
+        protocol: TCP
+  - role: worker
