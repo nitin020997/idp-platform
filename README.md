@@ -85,7 +85,7 @@ idp-platform/
 | 1 | Local kind cluster, reproducible from one config | ✅ |
 | 2 | Argo CD installed + app-of-apps bootstrap (GitOps backbone) | ✅ |
 | 3 | ingress-nginx + cert-manager (real TLS) | ✅ |
-| 4 | Secrets management (External Secrets / Vault) | ⬜ |
+| 4 | Secrets management (External Secrets / Vault) | ✅ |
 | 5 | Observability (Prometheus + Grafana + Loki, SLOs) | ⬜ |
 | 6 | Progressive delivery (Argo Rollouts, canary + auto-rollback) | ⬜ |
 | 7 | Supply-chain security (Trivy, cosign, SBOMs, Kyverno) | ⬜ |

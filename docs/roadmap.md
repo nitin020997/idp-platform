@@ -48,13 +48,22 @@ reachable at `https://whoami.localhost` with a cert-manager-issued certificate.
 **You learn:** Kubernetes networking, Ingress resources, TLS, cert lifecycle,
 the ingress-shim annotation flow, and extending app-of-apps to workloads.
 
-## Phase 4 — Secrets management ⬜
+## Phase 4 — Secrets management ✅
 
-No plaintext secrets in Git. External Secrets Operator pulling from a backend
-(or Vault). This is the part toy projects always fake.
+No plaintext secrets in Git. External Secrets Operator (ESO) pulls from a Vault
+backend (dev mode locally) and materializes native Kubernetes Secrets.
 
-**You learn:** secret rotation, the SealedSecrets vs. External Secrets vs. Vault
-trade-offs, keeping Git safe to be public.
+Added GitOps-style: `external-secrets.yaml` + `vault.yaml` (controllers),
+`vault-secret-store.yaml` (a `ClusterSecretStore`), and
+`apps/demo/whoami-externalsecret.yaml` (an `ExternalSecret`). Git holds only
+*references* — the real values live in Vault. The one credential (Vault token)
+is created out-of-band, never committed; production would use Vault's Kubernetes
+auth instead. Verified live: rotating `secret/whoami` in Vault auto-synced into
+the cluster Secret within the refresh interval, no redeploy.
+
+**You learn:** the SecretStore/ExternalSecret model, secret rotation/refresh,
+the SealedSecrets vs. External Secrets vs. Vault trade-offs, keeping Git safe to
+be public.
 
 ## Phase 5 — Observability ⬜
 
