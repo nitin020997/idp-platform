@@ -1,0 +1,50 @@
+# Phase 3 — ingress controller.
+#
+# Installed by Argo CD as a child app (app-of-apps): the root 'platform' app
+# finds this Application and creates it; this app then pulls the upstream Helm
+# chart and syncs it. We never run `helm install` by hand.
+#
+# The values pin the controller to the kind control-plane node (labelled
+# ingress-ready=true) and bind hostPorts 80/443, which the kind config maps to
+# your laptop's localhost:80/443.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    targetRevision: 4.15.1
+    helm:
+      values: |
+        controller:
+          hostPort:
+            enabled: true
+          service:
+            type: ClusterIP
+          nodeSelector:
+            ingress-ready: "true"
+          tolerations:
+            - key: node-role.kubernetes.io/control-plane
+              operator: Equal
+              effect: NoSchedule
+          publishService:
+            enabled: false
+          watchIngressWithoutClass: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

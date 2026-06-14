@@ -1,0 +1,37 @@
+# Phase 3 — certificate management.
+#
+# cert-manager issues and renews TLS certificates. Installed GitOps-style as a
+# child app. crds.enabled lets the chart manage its own (large) CRDs, and
+# ServerSideApply avoids kubectl's client-side annotation size limit.
+#
+# A ClusterIssuer (who actually signs certs) is added in a later step once
+# cert-manager's webhook is up.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.20.2
+    helm:
+      values: |
+        crds:
+          enabled: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
