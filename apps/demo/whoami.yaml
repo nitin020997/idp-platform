@@ -21,6 +21,12 @@ spec:
           image: traefik/whoami:v1.10.2
           ports:
             - containerPort: 80
+          # consume the secret ESO materialized from Vault (optional so the pod
+          # never blocks if the secret isn't present yet)
+          envFrom:
+            - secretRef:
+                name: whoami-secret
+                optional: true
           resources:
             requests:
               cpu: 10m
