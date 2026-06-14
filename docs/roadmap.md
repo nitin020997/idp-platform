@@ -34,13 +34,19 @@ detection and self-heal.
 
 ---
 
-## Phase 3 — Ingress + TLS ⬜
+## Phase 3 — Ingress + TLS ✅
 
-ingress-nginx for routing, cert-manager for automatic certificates. Locally,
-issue certs with a self-signed/`mkcert` issuer; the same manifests use Let's
-Encrypt against a real domain on a cloud cluster.
+ingress-nginx for routing, cert-manager for automatic certificates. Locally we
+issue certs with a self-signed `ClusterIssuer`; the same Ingress annotations use
+Let's Encrypt against a real domain on a cloud cluster.
 
-**You learn:** Kubernetes networking, Ingress resources, TLS, cert lifecycle.
+Added the GitOps way as child apps under `platform/` (`ingress-nginx.yaml`,
+`cert-manager.yaml`, `cluster-issuer.yaml`) plus an `apps` Application that
+GitOps-manages `apps/`. The `whoami` demo (`apps/demo/`) proves it end to end:
+reachable at `https://whoami.localhost` with a cert-manager-issued certificate.
+
+**You learn:** Kubernetes networking, Ingress resources, TLS, cert lifecycle,
+the ingress-shim annotation flow, and extending app-of-apps to workloads.
 
 ## Phase 4 — Secrets management ⬜
 
