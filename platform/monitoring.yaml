@@ -1,9 +1,9 @@
-# Phase 5 — kube-prometheus-stack: Prometheus + Grafana + Alertmanager.
+# Phase 5 — kube-prometheus-stack, right-sized for an 8GB laptop.
 #
-# The observability core. Auto-discovers ServiceMonitors/PrometheusRules across
-# the cluster (selectors set to false = watch everything, not just this release).
-# Tuned for a local kind cluster: short retention, modest resources, ephemeral
-# storage, and the control-plane scrape jobs that don't exist on kind disabled.
+# Prometheus + Grafana only (Alertmanager, node-exporter and log aggregation
+# dropped to fit 8GB RAM / 8 CPU). You still get metrics, dashboards,
+# ServiceMonitor-based scraping and SLO rules — the observability core. On real
+# or cloud hardware you'd re-enable the full set; the manifests are the same.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -23,8 +23,7 @@ spec:
       values: |
         crds:
           enabled: true
-        # kind doesn't expose these the way a real cluster does — skip to avoid
-        # permanently-firing "component down" alerts.
+        # not present on kind — skip to avoid permanently-firing "down" alerts
         kubeScheduler:
           enabled: false
         kubeControllerManager:
@@ -33,9 +32,16 @@ spec:
           enabled: false
         kubeProxy:
           enabled: false
+        # trimmed to fit 8GB
+        alertmanager:
+          enabled: false
+        nodeExporter:
+          enabled: false
         prometheus:
           prometheusSpec:
-            retention: 6h
+            retention: 2h
+            scrapeInterval: 60s
+            evaluationInterval: 60s
             ruleSelectorNilUsesHelmValues: false
             serviceMonitorSelectorNilUsesHelmValues: false
             podMonitorSelectorNilUsesHelmValues: false
@@ -43,21 +49,19 @@ spec:
             resources:
               requests:
                 cpu: 100m
-                memory: 400Mi
+                memory: 350Mi
               limits:
-                memory: 1Gi
-        alertmanager:
-          alertmanagerSpec:
-            resources:
-              requests:
-                cpu: 10m
-                memory: 50Mi
-              limits:
-                memory: 128Mi
+                memory: 700Mi
         grafana:
           adminPassword: admin
           persistence:
             enabled: false
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              memory: 250Mi
           ingress:
             enabled: true
             ingressClassName: nginx
@@ -69,11 +73,6 @@ spec:
               - hosts:
                   - grafana.localhost
                 secretName: grafana-tls
-          additionalDataSources:
-            - name: Loki
-              type: loki
-              access: proxy
-              url: http://loki.monitoring.svc.cluster.local:3100
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring

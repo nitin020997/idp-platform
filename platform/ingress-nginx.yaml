@@ -38,6 +38,11 @@ spec:
           publishService:
             enabled: false
           watchIngressWithoutClass: true
+          # expose Prometheus metrics + a ServiceMonitor so the whoami SLO has data
+          metrics:
+            enabled: true
+            serviceMonitor:
+              enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: ingress-nginx
