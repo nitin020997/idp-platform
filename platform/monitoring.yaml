@@ -1,0 +1,86 @@
+# Phase 5 — kube-prometheus-stack: Prometheus + Grafana + Alertmanager.
+#
+# The observability core. Auto-discovers ServiceMonitors/PrometheusRules across
+# the cluster (selectors set to false = watch everything, not just this release).
+# Tuned for a local kind cluster: short retention, modest resources, ephemeral
+# storage, and the control-plane scrape jobs that don't exist on kind disabled.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 86.2.3
+    helm:
+      values: |
+        crds:
+          enabled: true
+        # kind doesn't expose these the way a real cluster does — skip to avoid
+        # permanently-firing "component down" alerts.
+        kubeScheduler:
+          enabled: false
+        kubeControllerManager:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+        kubeProxy:
+          enabled: false
+        prometheus:
+          prometheusSpec:
+            retention: 6h
+            ruleSelectorNilUsesHelmValues: false
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            probeSelectorNilUsesHelmValues: false
+            resources:
+              requests:
+                cpu: 100m
+                memory: 400Mi
+              limits:
+                memory: 1Gi
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                cpu: 10m
+                memory: 50Mi
+              limits:
+                memory: 128Mi
+        grafana:
+          adminPassword: admin
+          persistence:
+            enabled: false
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            annotations:
+              cert-manager.io/cluster-issuer: selfsigned
+            hosts:
+              - grafana.localhost
+            tls:
+              - hosts:
+                  - grafana.localhost
+                secretName: grafana-tls
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              access: proxy
+              url: http://loki.monitoring.svc.cluster.local:3100
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
