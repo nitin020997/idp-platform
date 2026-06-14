@@ -1,0 +1,38 @@
+# Phase 4 — HashiCorp Vault (the secret backend).
+#
+# Dev mode: a single, auto-unsealed, in-memory Vault with a known root token.
+# Perfect for learning — NOT for production (data is lost on restart and the
+# root token is well-known). On a real cluster you'd run Vault HA with proper
+# unseal/auth, but the ESO wiring stays the same.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: vault
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://helm.releases.hashicorp.com
+    chart: vault
+    targetRevision: 0.32.0
+    helm:
+      values: |
+        server:
+          dev:
+            enabled: true
+            devRootToken: "root"
+        injector:
+          enabled: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vault
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
