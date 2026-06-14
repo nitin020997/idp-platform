@@ -49,7 +49,8 @@ cluster-down: ## Delete the local kind cluster
 argocd-install: ## Install Argo CD into the cluster
 	@echo "$(BLUE)Installing Argo CD ($(ARGOCD_VERSION))...$(RESET)"
 	@kubectl create namespace $(ARGOCD_NS) --dry-run=client -o yaml | kubectl apply -f -
-	@kubectl apply -n $(ARGOCD_NS) -f $(ARGOCD_MANIFEST)
+	@# server-side apply: Argo CD's CRDs exceed kubectl's 256KB client-side annotation limit
+	@kubectl apply --server-side --force-conflicts -n $(ARGOCD_NS) -f $(ARGOCD_MANIFEST)
 	@echo "$(BLUE)Waiting for Argo CD server to become ready...$(RESET)"
 	@kubectl rollout status -n $(ARGOCD_NS) deploy/argocd-server --timeout=300s
 	@echo "$(GREEN)✓ Argo CD installed$(RESET)"
